@@ -1,0 +1,25 @@
+# Temporary build files
+*.test
+*.out
+
+# Dependency directories (if vendored)
+vendor/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Coverage profiles
+*.coverprofile
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+bin/

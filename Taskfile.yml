@@ -1,0 +1,51 @@
+
+version: "3"
+
+vars:
+  DESCRIPTION: JWT0 - CLI Tool for JWT Tampering & Debugging -
+  APP_EXECUTABLE: jwto
+  OUT_DIR: .out
+  GOARCH: '{{.GOARCH | default "amd64"}}'
+
+  OS:
+    sh: uname -s
+
+  VERSION:
+    sh: git describe --tags --abbrev=0 2>/dev/null || echo dev
+
+  GOOS: '{{if eq .OS "Darwin"}}darwin{{else if eq .OS "Linux"}}linux{{else}}windows{{end}}'
+
+  EXECUTABLE: '{{if eq .GOOS "windows"}}{{.OUT_DIR}}/{{.APP_EXECUTABLE}}.exe{{else}}{{.OUT_DIR}}/{{.APP_EXECUTABLE}}{{end}}'
+
+tasks:
+  default:
+    desc: Print a description message
+    cmds:
+      - echo "{{.DESCRIPTION}} {{.VERSION}}"
+    silent: true
+  
+  build:
+    desc: Build the application
+    cmds:
+      - mkdir -p {{.OUT_DIR}}
+      - echo "Building for {{.OS}} ({{.GOOS}}/{{.GOARCH}}) {{.VERSION}}"
+      - >
+        GOOS={{.GOOS}}
+        GOARCH={{.GOARCH}}
+        go build
+        -ldflags="-s -w -X main.version={{.VERSION}}"
+        -o {{.EXECUTABLE}}
+        ./cmd/jwto
+
+  test:
+    desc: Run tests
+    cmds:
+      - go vet ./...
+      - go test ./... -race -count=1
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - echo "Cleaning up"
+      - go clean
+      - rm -rf {{.OUT_DIR}}/{{.APP_EXECUTABLE}}*
