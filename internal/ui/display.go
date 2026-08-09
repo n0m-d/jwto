@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
@@ -255,16 +256,25 @@ func mapRows(data map[string]interface{}) [][]string {
 	return rows
 }
 
-func formatClaimValue(key string, value interface{}) string {
+func toInt64(value any) (int64, bool) {
 	switch v := value.(type) {
+	case int64:
+		return v, true
 	case float64:
-		if v == float64(int64(v)) {
-			value = int64(v)
+		return int64(v), true
+	}
+	return 0, false
+}
+
+func formatClaimValue(key string, value any) string {
+	if isTimestampClaim(key) {
+		if unix, ok := toInt64(value); ok {
+			return fmt.Sprintf("%d (unix) %s", unix, time.Unix(unix, 0).Format(time.RFC3339))
 		}
 	}
 
-	if isTimestampClaim(key) {
-		return fmt.Sprintf("%v (unix)", value)
+	if v, ok := value.(float64); ok && v == float64(int64(v)) {
+		value = int64(v)
 	}
 	return fmt.Sprintf("%v", value)
 }
