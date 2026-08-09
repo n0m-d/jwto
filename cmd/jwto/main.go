@@ -50,6 +50,7 @@ var (
 	proxy           = requestCmd.Flag("proxy", "Proxy URL (e.g., http://127.0.0.1:8080)").String()
 	insecure        = requestCmd.Flag("insecure", "Skip TLS certificate verification (useful with intercepting proxies)").Short('k').Bool()
 	disableRedirect = requestCmd.Flag("disable-redirect", "Do not follow HTTP redirects (return the 3xx response)").Bool()
+	headersOnly     = requestCmd.Flag("headers", "Only print the headers and not the body").Short('I').Bool()
 )
 
 func init() {
@@ -72,6 +73,7 @@ func main() {
 			Proxy:           *proxy,
 			Insecure:        *insecure,
 			DisableRedirect: *disableRedirect,
+			HeadersOnly:     *headersOnly,
 		}); err != nil {
 			fmt.Printf("Request Error: %v\n", err)
 			os.Exit(1)

@@ -260,6 +260,7 @@ Send an HTTP request with custom headers. No `--jwt` flag needed — you control
 | `--proxy` | | No | Proxy URL (e.g. `http://127.0.0.1:8080`) |
 | `--insecure` | `-k` | No | Skip TLS certificate verification (use with intercepting proxies) |
 | `--disable-redirect` | | No | Do not follow HTTP redirects; return the 3xx response as-is |
+| `--headers` | `-I` | No | Only print response headers (omit the body) |
 
 ```bash
 # Bearer token
@@ -290,6 +291,11 @@ jwto request -u https://api.example.com/me \
 jwto request -u https://api.example.com/login \
   -H "Authorization=Bearer eyJhbGci..." \
   --disable-redirect
+
+# Response headers only
+jwto request -u https://api.example.com/me \
+  -H "Authorization=Bearer eyJhbGci..." \
+  --headers
 ```
 
 Header file format:

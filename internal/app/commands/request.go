@@ -24,6 +24,7 @@ type RequestOptions struct {
 	Proxy           string
 	Insecure        bool
 	DisableRedirect bool
+	HeadersOnly     bool
 }
 
 // HandleRequest sends an HTTP request with the provided options.
@@ -87,7 +88,7 @@ func HandleRequest(opts RequestOptions) error {
 	if opts.DisableRedirect && resp.StatusCode >= 300 && resp.StatusCode < 400 {
 		fmt.Println(ui.AnsiYellow + "[*] Redirect not followed (--disable-redirect)" + ui.AnsiReset)
 	}
-	printResponse(resp, respBody)
+	printResponse(resp, respBody, opts.HeadersOnly)
 
 	return nil
 }
@@ -180,7 +181,7 @@ func printRequest(req *http.Request) {
 	fmt.Println()
 }
 
-func printResponse(resp *http.Response, body []byte) {
+func printResponse(resp *http.Response, body []byte, headersOnly bool) {
 	statusColor := ui.AnsiGreen
 	if resp.StatusCode >= 400 {
 		statusColor = ui.AnsiRed
@@ -195,7 +196,7 @@ func printResponse(resp *http.Response, body []byte) {
 	}
 
 	fmt.Println()
-	if len(body) > 0 {
+	if len(body) > 0 && !headersOnly {
 		fmt.Println(string(bytes.TrimRight(body, "\n")))
 	}
 }
