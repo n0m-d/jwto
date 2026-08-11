@@ -2,10 +2,12 @@ package commands
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,24 +19,49 @@ import (
 )
 
 // HandleDictionary processes the dictionary attack command for Brute Force attacks.
-func HandleDictionary(token *jwt.Token, filePath string, workers int) error {
-	if filePath == "" {
-		return fmt.Errorf("wordlist path is required")
-	}
-
+// When filePath is empty, embeddedWordlist is used instead.
+func HandleDictionary(token *jwt.Token, filePath string, workers int, embeddedWordlist []byte) error {
 	alg := token.Method.Alg()
 	if _, ok := app.HMACSigningMethods[alg]; !ok {
 		return fmt.Errorf("unsupported algorithm: %s, supports only HMAC algorithms", alg)
 	}
 
-	f, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("reading list: %w", err)
+	var (
+		r    io.Reader
+		name string
+	)
+	if filePath != "" {
+		f, err := os.Open(filePath)
+		if err != nil {
+			return fmt.Errorf("reading list: %w", err)
+		}
+		defer f.Close()
+		r = f
+		name = filePath
+	} else {
+		gz, err := gzip.NewReader(bytes.NewReader(embeddedWordlist)) // Decompress the embedded wordlist
+		if err != nil {
+			return err
+		}
+		defer gz.Close()
+
+		data, err := io.ReadAll(gz) // read all decompressed data into memory
+		if err != nil {
+			return err
+		}
+
+		if strings.TrimSpace(string(data)) == "" { // Check if the decompressed data is empty
+			return fmt.Errorf("embedded wordlist is empty")
+		}
+
+		r = strings.NewReader(string(data)) // convert the decompressed data to a string reader which implements io.Reader
+		name = "Embedded"
 	}
-	defer f.Close()
 
 	start := time.Now()
 	tokenString := token.Raw
+
+	fmt.Println(ui.AnsiYellow + "[*] Using wordlist: " + name + ui.AnsiReset)
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = ui.AnsiYellow + " [*] Processing...\n" + ui.AnsiReset
@@ -93,7 +120,7 @@ readLoop:
 			break
 		}
 
-		n, err := f.Read(buf)
+		n, err := r.Read(buf)
 		if n > 0 {
 			chunk := append(partial, buf[:n]...)
 

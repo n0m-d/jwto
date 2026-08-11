@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	_ "embed"
+
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/n0m-d/jwto/internal/app/commands"
 	"github.com/n0m-d/jwto/internal/ui"
 )
+
+//go:embed data/common_wordlist.txt.gz
+var commonWordlistGz []byte
 
 var (
 	version = ""
@@ -29,7 +34,7 @@ var (
 	confusionAlg = confusion.Flag("alg", "HMAC algorithm for confusion (HS256, HS384, HS512). Default: HS256").Default("HS256").String()
 
 	dictionary = cliApp.Command("dict", "Dictionary for Brute Force Attack")
-	file       = dictionary.Flag("file", "Path to List of Wordlist").String()
+	file       = dictionary.Flag("file", "Path to wordlist (defaults to embedded common wordlist)").String()
 	workers    = dictionary.Flag("workers", fmt.Sprintf("Number of workers (1-%d)", commands.MaxWorkers())).Default("5").Int()
 
 	signing    = cliApp.Command("sign", "Sign the JWT with an HMAC secret")
@@ -112,7 +117,7 @@ func main() {
 			if capped {
 				fmt.Printf("[*] workers capped: %d -> %d (max for this system)\n", *workers, w)
 			}
-			if err := commands.HandleDictionary(token, *file, w); err != nil {
+			if err := commands.HandleDictionary(token, *file, w, commonWordlistGz); err != nil {
 				fmt.Printf("Dictionary Attack Error: %v\n", err)
 				os.Exit(1)
 			}

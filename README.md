@@ -11,7 +11,7 @@ A command-line tool for inspecting and tampering with JSON Web Tokens (JWTs). Bu
 - **Debug** — decode and pretty-print a token's header and payload
 - **Bypass** — generate tokens with the `none` algorithm (signature bypass)
 - **Confusion** — perform RSA → HMAC algorithm confusion attacks
-- **Dict** — brute-force HMAC secrets (`HS256` / `HS384` / `HS512`) using a wordlist
+- **Dict** — brute-force HMAC secrets (`HS256` / `HS384` / `HS512`) using a wordlist (ships with an embedded common JWT secrets list; `--file` optional)
 - **Sign** — re-sign a token with a known secret after tampering claims
 - **Verify** — check if an HMAC secret matches a JWT signature
 - **Request** — send HTTP requests with custom headers (curl-like), optional proxy / no-follow redirects
@@ -205,12 +205,18 @@ jwto -j "<TOKEN>" confusion --pub_key ./public.pem -c role=admin -r exp
 
 Brute-force the HMAC signing secret against a wordlist. Supports `HS256`, `HS384`, and `HS512` only.
 
+If `--file` is omitted, JWT0 uses a **gzip-compressed common secrets list** embedded in the binary (derived from [wallarm/jwt-secrets](https://github.com/wallarm/jwt-secrets)). Pass `--file` for larger lists (e.g. rockyou).
+
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--file` | | Path to a wordlist (one candidate secret per line) |
+| `--file` | *(embedded list)* | Path to a wordlist (one candidate secret per line). Optional |
 | `--workers` | `5` | Parallel workers (capped at `GOMAXPROCS × 4`) |
 
 ```bash
+# Use the embedded common JWT secrets list
+jwto -j "<TOKEN>" dict
+
+# Use a custom wordlist
 jwto -j "<TOKEN>" dict --file ./wordlists/rockyou.txt --workers 10
 ```
 
@@ -320,7 +326,10 @@ jwto -j "<TOKEN>" bypass -c admin=true -c role=admin
 # Algorithm confusion
 jwto -j "<TOKEN>" confusion --pub_key ./wordlists/public.pem
 
-# Crack a weak HMAC secret
+# Crack a weak HMAC secret (embedded common list)
+jwto -j "<TOKEN>" dict
+
+# Crack with a custom wordlist
 jwto -j "<TOKEN>" dict --file ./wordlists/rockyou.txt
 
 # Re-sign after tampering
@@ -368,3 +377,4 @@ go build -o jwto ./cmd/jwto
 ## Acknowledgment
 
 - https://github.com/ticarpi/jwt_tool
+- https://github.com/wallarm/jwt-secrets — source of the embedded common JWT secrets wordlist used by `dict` when `--file` is not provided
