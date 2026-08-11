@@ -24,7 +24,7 @@ VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
 build:
 	@echo "Building for $(OS) ($(GOOS)/$(GOARCH)) $(VERSION)"
 	@mkdir -p $(OUT_DIR)
-	GOARCH=$(GOARCH) GOOS=$(GOOS) go build -ldflags="-s -w -X main.version=$(VERSION)" -o $(EXECUTABLE) ./cmd/jwto
+	GOARCH=$(GOARCH) GOOS=$(GOOS) go build -trimpath -ldflags="-s -w -buildid= -X main.version=$(VERSION)" -o $(EXECUTABLE) ./cmd/jwto
 
 test:
 	go vet ./...
